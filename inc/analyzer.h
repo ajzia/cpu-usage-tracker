@@ -11,6 +11,10 @@ typedef struct AnalyzerPacket {
 
 AnalyzerPacket* analyzer_create(const char* restrict core_name);
 
+char* analyzer_get_core_name(const AnalyzerPacket* restrict analyzer);
+
+double analyzer_get_percentage(const AnalyzerPacket*  restrict analyzer);
+
 AnalyzerPacket* analyzer_count_cpu_usage(const ProcStatData* prev, const ProcStatData* curr);
 
 void analyzer_destroy(AnalyzerPacket* analyzer);

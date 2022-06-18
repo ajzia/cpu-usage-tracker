@@ -20,6 +20,14 @@ AnalyzerPacket* analyzer_create(const char* restrict core_name) {
   return packet;
 }
 
+char* analyzer_get_core_name(const AnalyzerPacket* const restrict analyzer) {
+  return (char*)analyzer->core_name;
+}
+
+double analyzer_get_percentage(const AnalyzerPacket* const restrict analyzer) {
+  return analyzer->percentage;
+}
+
 AnalyzerPacket* analyzer_count_cpu_usage(const ProcStatData* const prev, const ProcStatData* const curr) {
   if (prev == NULL)
     return NULL;
