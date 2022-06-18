@@ -16,6 +16,6 @@ uint8_t* reader_read(register const Reader* restrict reader, const size_t cores,
 
 void reader_destroy(Reader* reader);
 
-void reader_rewind(Reader* restrict reader);
+void reader_reset(Reader* restrict reader);
 
 #endif

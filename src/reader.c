@@ -38,7 +38,7 @@ uint8_t* reader_read(register const Reader* restrict reader, const size_t cores,
   return packet;
 }
 
-void reader_rewind(Reader* const restrict reader) {
+void reader_reset(Reader* const restrict reader) {
   fclose(reader->f);
   reader->f = fopen(reader->path, "r");
 }
