@@ -1,4 +1,4 @@
-#include "buffer.h"
+#include "../inc/buffer.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <stdint.h>
