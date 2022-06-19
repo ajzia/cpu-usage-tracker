@@ -3,6 +3,7 @@
 #include "analyzer_tests.h"
 #include "procstat_data_tests.h"
 #include "logger_tests.h"
+#include "watchdog_tests.h"
 
 int main(void) {
   buffer_tests();
@@ -10,6 +11,7 @@ int main(void) {
   analyzer_tests();
   procstat_data_tests();
   logger_tests();
+  watchdog_tests();
   
   return 0;
 }
