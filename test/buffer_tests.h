@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+static void buffer_create_test(void);
 static void buffer_create_test(void) {
   Buffer* buffer = buffer_create(0, 1);
   assert(buffer == NULL);
@@ -16,6 +17,7 @@ static void buffer_create_test(void) {
   buffer_destroy(buffer);
 }
 
+static void buffer_is_empty_test(void);
 static void buffer_is_empty_test(void) {
   Buffer* buffer = buffer_create(1, 1);
   assert(buffer != NULL);
@@ -25,6 +27,7 @@ static void buffer_is_empty_test(void) {
   buffer_destroy(buffer);
 } 
 
+static void buffer_put_test(void);
 static void buffer_put_test(void) {
   register const size_t packet_size = 1;
   register const size_t max_size = 1;
@@ -35,7 +38,7 @@ static void buffer_put_test(void) {
   bool is_empty = buffer_is_empty(buffer);
   assert(is_empty);
 
-  const uint8_t packet[] = {0xF};;
+  const uint8_t packet[] = {0xF};
 
   buffer_put(buffer, packet, packet_size);
 
@@ -45,6 +48,7 @@ static void buffer_put_test(void) {
   buffer_destroy(buffer);
 }
 
+static void buffer_get_test(void);
 static void buffer_get_test(void) {
   register const size_t packet_size = 1;
   register const size_t max_size = 1;
@@ -71,6 +75,7 @@ static void buffer_get_test(void) {
   buffer_destroy(buffer);
 }
 
+static void buffer_is_full_test(void);
 static void buffer_is_full_test(void) {
   register const size_t packet_size = 1;
   register const size_t max_size = 10;
@@ -92,6 +97,8 @@ static void buffer_is_full_test(void) {
 
   buffer_destroy(buffer);
 }
+
+void buffer_tests(void);
 
 void buffer_tests(void) {
   buffer_create_test();

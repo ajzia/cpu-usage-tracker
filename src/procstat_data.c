@@ -44,4 +44,4 @@ void procstatdata_print(register const ProcStatData* const data) {
 
 void procstatdata_destroy(ProcStatData* const data) {
   free(data);
-};
+}

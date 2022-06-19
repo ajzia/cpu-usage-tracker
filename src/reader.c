@@ -26,7 +26,7 @@ uint8_t* reader_read(register const Reader* restrict reader, const size_t cores,
   uint8_t* packet = malloc(one_core_size * (cores + 1)); 
 
   for (size_t i = 0; i <= cores; ++i) {
-    char* result = fgets(&line[0], one_core_size, reader->f);
+    char* result = fgets(&line[0], (int)one_core_size, reader->f);
     (void)result;
 
     memcpy(&packet[i * one_core_size], &line[0], one_core_size);

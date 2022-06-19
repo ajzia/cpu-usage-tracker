@@ -28,10 +28,10 @@ Buffer* buffer_create(const size_t packet_size, const size_t max_size) {
       return NULL;
 
   *buffer = (Buffer){.max_size = max_size,
-                      .packet_size = packet_size,
-                      .current_size = (size_t) 0,
-                      .head = (size_t) 0,
-                      .tail = (size_t) 0
+                     .packet_size = packet_size,
+                     .current_size = (size_t) 0,
+                     .head = (size_t) 0,
+                     .tail = (size_t) 0
                     };
 
   pthread_mutex_init(&buffer->mutex, NULL);

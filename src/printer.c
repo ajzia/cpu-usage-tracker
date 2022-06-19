@@ -44,7 +44,7 @@ static void printer_histogram(const double percent) {
 }
 
 void printer_print(register const uint8_t packet[], const size_t packet_size) {
-  register const size_t cores = sysconf(_SC_NPROCESSORS_ONLN);
+  register const size_t cores = (size_t)sysconf(_SC_NPROCESSORS_ONLN);
 
   printf("\n");
   printer_horizontal_bound();
@@ -54,13 +54,14 @@ void printer_print(register const uint8_t packet[], const size_t packet_size) {
     memcpy(analyzed_core, &packet[i * packet_size], sizeof(AnalyzerPacket));
 
     register double cpu_usage = analyzer_get_percentage(analyzed_core);
-    const char* name = analyzer_get_core_name(analyzed_core);
+    char* name = analyzer_get_core_name(analyzed_core);
     printf("| %*s [", -CORE_NAME_PAD, name);                    
 
     printer_histogram(cpu_usage);
     cpu_usage *= 100;
     printf("] %*.2lf%% |\n", PERCENTAGE_PAD, cpu_usage);
 
+    free(name);
     free(analyzed_core);
   }
 

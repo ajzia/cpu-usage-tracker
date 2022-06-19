@@ -21,7 +21,10 @@ AnalyzerPacket* analyzer_create(const char* restrict core_name) {
 }
 
 char* analyzer_get_core_name(const AnalyzerPacket* const restrict analyzer) {
-  return (char*)analyzer->core_name;
+  char* name = malloc(sizeof(analyzer->core_name));
+  memcpy(name, analyzer->core_name, sizeof(analyzer->core_name));
+
+  return name;
 }
 
 double analyzer_get_percentage(const AnalyzerPacket* const restrict analyzer) {

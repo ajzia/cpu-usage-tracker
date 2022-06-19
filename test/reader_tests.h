@@ -7,15 +7,17 @@
 
 #define one_core_size 250 
 
-static void reader_create_test() {
+static void reader_create_test(void);
+static void reader_create_test(void) {
   Reader* reader = reader_create("/proc/stat", 1);
   assert(reader != NULL);
 
   reader_destroy(reader);
 }
 
-static void reader_read_test() {
-  const size_t cores = sysconf(_SC_NPROCESSORS_ONLN);
+static void reader_read_test(void);
+static void reader_read_test(void) {
+  const size_t cores = (size_t)sysconf(_SC_NPROCESSORS_ONLN);
   const size_t packet_size = one_core_size;
   (void)packet_size;
 
@@ -29,7 +31,8 @@ static void reader_read_test() {
   reader_destroy(reader);
 }
 
-static void reader_rewind_test() {
+static void reader_rewind_test(void);
+static void reader_rewind_test(void) {
   Reader* reader = reader_create("/proc/stat", 1);
   assert(reader != NULL);
 
@@ -40,6 +43,7 @@ static void reader_rewind_test() {
   reader_destroy(reader);
 }
 
+void reader_tests(void);
 void reader_tests(void) {
   reader_create_test();
   reader_read_test();

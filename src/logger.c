@@ -57,7 +57,7 @@ void logger_put(register Buffer* buffer, const char* log_type, const char* date,
   buffer_put(buffer, log, packet_size);
 
   free(log);
-};
+}
 
 void logger_read(register const Logger* const logger, register Buffer* buffer) {
   uint8_t* log = buffer_get(buffer);

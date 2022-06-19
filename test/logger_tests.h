@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
+static void logger_create_test(void);
 static void logger_create_test(void) {
   Logger* logger = logger_create();
   assert(logger != NULL);
@@ -11,6 +12,7 @@ static void logger_create_test(void) {
   logger_destroy(logger);
 }
 
+static void logger_put_read_test(void);
 static void logger_put_read_test(void) {
   register const size_t packet_size = 200;
   register const size_t max_size = 50;
@@ -32,7 +34,7 @@ static void logger_put_read_test(void) {
   logger_destroy(logger);
 }
 
-
+void logger_tests(void);
 void logger_tests(void) {
   logger_create_test();
   logger_put_read_test();
