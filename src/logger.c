@@ -64,17 +64,19 @@ void logger_read(register const Logger* const logger, register Buffer* buffer) {
 
   char* log_type = malloc(LEVEL_LENGTH + 2);
   char* date = malloc(DATE_LENGTH + 2);
+  char* time = malloc(DATE_LENGTH + 2);
   char* thread_name = malloc(THREAD_NAME_LENGTH + 2);
   char* action = malloc(ACTION_LENGTH);
 
-  sscanf((char*)log, "%s %s %s %s", log_type, date, thread_name, action);
+  sscanf((char*)log, "%s %s %s %s %s", log_type, date, time, thread_name, action);
 
-  fprintf(logger->f, "%*s %s %*s %s", -LEVEL_LENGTH, log_type, date, -THREAD_NAME_LENGTH, thread_name, action);
+  fprintf(logger->f, "%*s %s %s %*s %s\n", -LEVEL_LENGTH, log_type, date, time, -THREAD_NAME_LENGTH, thread_name, action);
   fflush(logger->f);
 
   free(log);
   free(log_type);
   free(date);
+  free(time);
   free(thread_name);
   free(action);
 }

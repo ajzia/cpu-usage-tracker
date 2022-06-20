@@ -5,6 +5,10 @@
 #include "reader.h"
 #include "analyzer.h"
 #include "printer.h"
+#include "logger.h"
+#include "watchdog.h"
+
+void* logger_thread(void* arg);
 
 void* reader_thread(void* arg);
 
