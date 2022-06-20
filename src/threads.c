@@ -10,6 +10,7 @@
 #define THREADS_COUNT 5
 #define THREADS_BUFFER_SIZE 10
 #define LOGGER_BUFFER_SIZE 50
+#define WATCHDOG_TIMER 2
 
 #define logger_log(buffer, log_type, thread_name, action, packet_size) \
   do { \
@@ -24,6 +25,25 @@
     buffer_unlock(buffer); \
   } while(0) \
 
+#define watchdog_check(watchdog) \
+  do { \
+    watchdog_lock(watchdog); \
+    watchdog_check_alarm(watchdog); \
+    watchdog_unlock(watchdog); \
+  } while(0) \
+
+#define watchdog_alarm(watchdog) \
+  do { \
+    watchdog_lock(watchdog); \
+    if (watchdog_get_alarm_flag(watchdog)) { \
+      pthread_mutex_lock(&watchdog_mutex); \
+      watchdog_flag = true; \
+      dog_name = watchdog_get_name(watchdog); \
+      pthread_mutex_unlock(&watchdog_mutex); \
+    } \
+    watchdog_unlock(watchdog); \
+  } while(0) \
+
 static size_t cores;
 static size_t reader_packet_size;
 static size_t read_frequency;
@@ -32,7 +52,17 @@ static size_t analyzerpacket_all_cores;
 static size_t procstatdata_one_core;
 static size_t procstatdata_all_cores;
 
+static bool watchdog_flag = false;
+
 static pthread_t tid[THREADS_COUNT];
+static pthread_mutex_t watchdog_mutex;
+
+static char* dog_name;
+
+static Watchdog* restrict reader_watchdog; 
+static Watchdog* restrict anaylzer_watchdog; 
+static Watchdog* restrict printer_watchdog; 
+static Watchdog* restrict logger_watchdog; 
 
 static Buffer* restrict logger_buffer;
 static Buffer* restrict reader_analyzer_buffer;
@@ -47,26 +77,30 @@ static char* get_current_date(void) {
   return date;
 }
 
-void* logger_thread(void* arg) {
+static void watchdog_notify(Watchdog* watchdog) {
+  watchdog_lock(watchdog); 
+  watchdog_set_flag(watchdog); 
+  watchdog_unlock(watchdog); 
+}
 
-  (void)arg;
+static void wake_threads(void) {
+  buffer_call_consumer(reader_analyzer_buffer);
+  buffer_call_producer(reader_analyzer_buffer);
+  buffer_call_consumer(analyzer_printer_buffer);
+  buffer_call_producer(analyzer_printer_buffer);
+  buffer_call_consumer(logger_buffer);
+  buffer_call_producer(logger_buffer);
+}
 
-  register Logger* restrict logger = logger_create();
+void signal_exit(int signum) {
+  logger_log(logger_buffer, "INFO", "SIGNAL", "Signal detected, exiting program.  ", logger_message_size);
 
-  while(true) {
-    buffer_lock(logger_buffer);
+  printf(" Signal %d detected, exiting program...\n", signum);
 
-    if (buffer_is_empty(logger_buffer)) {
-      buffer_wait_for_producer(logger_buffer);
-    }
-    logger_read(logger, logger_buffer);
-    buffer_call_consumer(logger_buffer);
-
-    buffer_unlock(logger_buffer);
-  }
-
-  logger_destroy(logger);
-  return NULL;
+  pthread_mutex_lock(&watchdog_mutex);
+  watchdog_flag = true;
+  dog_name = "signal";
+  pthread_mutex_unlock(&watchdog_mutex);
 }
 
 void* reader_thread(void* arg) {
@@ -75,13 +109,24 @@ void* reader_thread(void* arg) {
   (void)arg;
 
   register Reader* restrict reader = reader_create("/proc/stat", read_frequency);
-
-  size_t counter = 0;
+  
   while(true) {
-    counter++;
+
+    watchdog_lock(reader_watchdog);
+    if (watchdog_get_alarm_flag(reader_watchdog) == 1) {
+      watchdog_unlock(reader_watchdog);
+      break;
+    }
+    watchdog_unlock(reader_watchdog);
+
+    logger_log(logger_buffer, "INFO", thread_name, "Resetting reader.", logger_message_size);
     reader_reset(reader);
-    uint8_t* packet = reader_read(reader, cores, reader_one_core);
+
+    logger_log(logger_buffer, "INFO", thread_name, "Scratching watchdog.", logger_message_size);
+    watchdog_scratch(reader_watchdog);
+
     logger_log(logger_buffer, "INFO", thread_name, "Reading from file.", logger_message_size);
+    uint8_t* packet = reader_read(reader, cores, reader_one_core);
 
     buffer_lock(reader_analyzer_buffer);
 
@@ -89,6 +134,13 @@ void* reader_thread(void* arg) {
       logger_log(logger_buffer, "INFO", thread_name, "The_buffer is full, waiting for consumer.", logger_message_size);
       buffer_wait_for_consumer(reader_analyzer_buffer);
     }
+
+    watchdog_lock(reader_watchdog);
+    if (watchdog_get_alarm_flag(logger_watchdog) == 1) {
+      watchdog_unlock(reader_watchdog);
+      break;
+    }
+    watchdog_unlock(reader_watchdog);
     
     logger_log(logger_buffer, "INFO", thread_name, "Sending_packet.", logger_message_size);
     buffer_put(reader_analyzer_buffer, packet, reader_packet_size);
@@ -101,6 +153,8 @@ void* reader_thread(void* arg) {
     sleep((unsigned int)reader->read_frequency);
   }
 
+  logger_log(logger_buffer, "INFO", thread_name, "Exiting...", logger_message_size);
+  printf("Exiting reader...\n");
   reader_destroy(reader);
   return NULL;
 }
@@ -113,15 +167,31 @@ void* analyzer_thread(void* arg) {
   bool prev_flag = false;
   uint8_t* prev = malloc(procstatdata_all_cores);
 
-  size_t counter = 0;
   while(true) {
-    counter++;
+
+    watchdog_lock(anaylzer_watchdog);
+    if (watchdog_get_alarm_flag(anaylzer_watchdog) == 1) {
+      watchdog_unlock(anaylzer_watchdog);
+      break;
+    }
+    watchdog_unlock(anaylzer_watchdog);
+
+    logger_log(logger_buffer, "INFO", thread_name, "Scratching watchdog.", logger_message_size);
+    watchdog_scratch(anaylzer_watchdog);
+
     buffer_lock(reader_analyzer_buffer);
 
     if (buffer_is_empty(reader_analyzer_buffer)) {
       logger_log(logger_buffer, "INFO", thread_name, "The buffer is empty, waiting for producer.", logger_message_size);
       buffer_wait_for_producer(reader_analyzer_buffer);
     }
+
+    watchdog_lock(anaylzer_watchdog);
+    if (watchdog_get_alarm_flag(anaylzer_watchdog) == 1) {
+      watchdog_unlock(anaylzer_watchdog);
+      break;
+    }
+    watchdog_unlock(anaylzer_watchdog);
 
     logger_log(logger_buffer, "INFO", thread_name, "Getting packet.", logger_message_size);
     uint8_t* curr = buffer_get(reader_analyzer_buffer);
@@ -169,6 +239,12 @@ void* analyzer_thread(void* arg) {
       free(prev_data);
     }
     
+    watchdog_lock(anaylzer_watchdog);
+    if (watchdog_get_alarm_flag(anaylzer_watchdog) == 1) {
+      watchdog_unlock(anaylzer_watchdog);
+      break;
+    }
+    watchdog_unlock(anaylzer_watchdog);
 
     buffer_lock(analyzer_printer_buffer);
 
@@ -176,6 +252,13 @@ void* analyzer_thread(void* arg) {
       logger_log(logger_buffer, "INFO", thread_name, "The_buffer is full, waiting for consumer.", logger_message_size);
       buffer_wait_for_consumer(analyzer_printer_buffer);
     }
+
+    watchdog_lock(anaylzer_watchdog);
+    if (watchdog_get_alarm_flag(anaylzer_watchdog) == 1) {
+      watchdog_unlock(anaylzer_watchdog);
+      break;
+    }
+    watchdog_unlock(anaylzer_watchdog);
     
     logger_log(logger_buffer, "INFO", thread_name, "Sending packet.", logger_message_size);
     buffer_put(analyzer_printer_buffer, analyzed_packet, analyzerpacket_all_cores);
@@ -191,6 +274,8 @@ void* analyzer_thread(void* arg) {
 
   free(prev);
 
+  logger_log(logger_buffer, "INFO", thread_name, "Exiting...", logger_message_size);
+  printf("Exiting analyzer...\n");
   return NULL;
 }
 
@@ -199,9 +284,17 @@ void* printer_thread(void* arg) {
 
   (void)arg;
 
-  size_t counter = 0;
   while(true) {
-    counter++;
+
+    watchdog_lock(printer_watchdog);
+    if (watchdog_get_alarm_flag(printer_watchdog) == 1) {
+      watchdog_unlock(printer_watchdog);
+      break;
+    }
+    watchdog_unlock(printer_watchdog);
+
+    logger_log(logger_buffer, "INFO", thread_name, "Scratching watchdog.", logger_message_size);
+    watchdog_scratch(printer_watchdog);
 
     buffer_lock(analyzer_printer_buffer);
 
@@ -209,6 +302,13 @@ void* printer_thread(void* arg) {
       logger_log(logger_buffer, "INFO", thread_name, "The buffer is empty, waiting for producer.", logger_message_size);
       buffer_wait_for_producer(analyzer_printer_buffer);
     }
+
+    watchdog_lock(printer_watchdog);
+    if (watchdog_get_alarm_flag(printer_watchdog) == 1) {
+      watchdog_unlock(printer_watchdog);
+      break;
+    }
+    watchdog_unlock(printer_watchdog);
 
     logger_log(logger_buffer, "INFO", thread_name, "Getting packet.", logger_message_size);
     uint8_t* packet = buffer_get(analyzer_printer_buffer);
@@ -222,9 +322,103 @@ void* printer_thread(void* arg) {
     free(packet);
   }
 
+  logger_log(logger_buffer, "INFO", thread_name, "Exiting...", logger_message_size);
+  printf("Exiting printer...\n");
   return NULL;
 }
 
+void* logger_thread(void* arg) {
+  (void)arg;
+
+  register Logger* restrict logger = logger_create();
+
+  while(true) {
+
+    watchdog_lock(logger_watchdog);
+    buffer_lock(logger_buffer);
+    if (watchdog_get_alarm_flag(logger_watchdog) == 1 && buffer_is_empty(logger_buffer)) {
+      buffer_unlock(logger_buffer);
+      watchdog_unlock(logger_watchdog);
+      break;
+    }
+    buffer_unlock(logger_buffer);
+    watchdog_unlock(logger_watchdog);
+
+    watchdog_scratch(logger_watchdog);
+
+    buffer_lock(logger_buffer);
+
+    if (buffer_is_empty(logger_buffer)) {
+      buffer_wait_for_producer(logger_buffer);
+    }
+
+    watchdog_lock(logger_watchdog);
+    if (watchdog_get_alarm_flag(logger_watchdog) == 1 && buffer_is_empty(logger_buffer)) {
+      watchdog_unlock(logger_watchdog);
+      break;
+    }
+    watchdog_unlock(logger_watchdog);
+
+    logger_read(logger, logger_buffer);
+    buffer_call_consumer(logger_buffer);
+
+    buffer_unlock(logger_buffer);
+  }
+
+  printf("Exiting logger...\n");
+  logger_destroy(logger);
+  return NULL;
+}
+
+void* watchdog_thread(void* arg) {
+  char* thread_name = "WATCHDOG";
+
+  (void)arg;
+
+  while(true) {
+
+    watchdog_check(reader_watchdog);
+    watchdog_check(anaylzer_watchdog);
+    watchdog_check(printer_watchdog);
+    watchdog_check(logger_watchdog);
+
+    watchdog_alarm(reader_watchdog);
+    watchdog_alarm(anaylzer_watchdog);
+    watchdog_alarm(printer_watchdog);
+    watchdog_alarm(logger_watchdog);
+
+    pthread_mutex_lock(&watchdog_mutex);
+    if (watchdog_flag) {
+      char* action = malloc(40);
+      strcpy(action, "Watchdog ");
+      strcat(action, dog_name);
+      strcat(action, " has raised the alarm.");
+
+      if (strcmp(dog_name, "signal")) {
+        logger_log(logger_buffer, "INFO", thread_name, action, logger_message_size);
+        free(dog_name);
+      }
+
+      free(action);
+      pthread_mutex_unlock(&watchdog_mutex);
+
+      watchdog_notify(reader_watchdog); 
+      watchdog_notify(anaylzer_watchdog); 
+      watchdog_notify(printer_watchdog); 
+      watchdog_notify(logger_watchdog); 
+
+      break;
+    }
+    pthread_mutex_unlock(&watchdog_mutex);
+
+    sleep(1);
+  }
+
+  logger_log(logger_buffer, "INFO", thread_name, "Exiting...", logger_message_size);
+  printf("Exiting watchdog...\n");
+  wake_threads();
+  return NULL;
+}
 
 void run_threads(void) {
   // CONSTANTS
@@ -241,20 +435,35 @@ void run_threads(void) {
   analyzer_printer_buffer = buffer_create(analyzerpacket_all_cores, THREADS_BUFFER_SIZE);
   logger_buffer = buffer_create(logger_message_size, LOGGER_BUFFER_SIZE);
 
+  // WATCHDOGS
+  logger_watchdog = watchdog_create(pthread_self(), "LOGGER", WATCHDOG_TIMER);
+  reader_watchdog = watchdog_create(pthread_self(), "READER", WATCHDOG_TIMER);
+  anaylzer_watchdog = watchdog_create(pthread_self(), "ANALYZER", WATCHDOG_TIMER);
+  printer_watchdog = watchdog_create(pthread_self(), "PRINTER", WATCHDOG_TIMER);
+
+  pthread_mutex_init(&watchdog_mutex, NULL);
+
   // THREADS
   pthread_create(&tid[0], NULL, reader_thread, NULL);
   pthread_create(&tid[1], NULL, analyzer_thread, NULL);
   pthread_create(&tid[2], NULL, printer_thread, NULL);
   pthread_create(&tid[3], NULL, logger_thread, NULL);
-  // pthread_create(&tid[4], NULL, watchdog_thread, NULL);
+  pthread_create(&tid[4], NULL, watchdog_thread, NULL);
 
   pthread_join(tid[0], NULL);
   pthread_join(tid[1], NULL);
   pthread_join(tid[2], NULL);
   pthread_join(tid[3], NULL);
-  // pthread_join(tid[4], NULL);
+  pthread_join(tid[4], NULL);
 
   buffer_destroy(reader_analyzer_buffer);
   buffer_destroy(analyzer_printer_buffer);
   buffer_destroy(logger_buffer);
+
+  watchdog_destroy(logger_watchdog);
+  watchdog_destroy(reader_watchdog);
+  watchdog_destroy(anaylzer_watchdog);
+  watchdog_destroy(printer_watchdog); 
+
+  pthread_mutex_destroy(&watchdog_mutex);
 }

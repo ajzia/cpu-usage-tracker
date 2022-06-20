@@ -4,13 +4,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-/* typedef struct Buffer_Observability {
-  size_t no_put;
-  size_t no_put_on_full;
-  size_t no_get;
-  size_t no_get_on_full;
-} Buffer_Observability; */
-
 typedef struct Buffer Buffer;
 
 Buffer* buffer_create(const size_t packet_size, const size_t max_size);

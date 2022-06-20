@@ -18,4 +18,6 @@ void* printer_thread(void* arg);
 
 void run_threads(void);
 
+void signal_exit(int signum);
+
 #endif

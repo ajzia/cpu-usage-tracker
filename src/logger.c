@@ -50,7 +50,7 @@ void logger_put(register Buffer* buffer, const char* log_type, const char* date,
     return;
 
   uint8_t* log = malloc(packet_size);
-  snprintf((char*)log, 210, "[%s] [%s] [%s] %s", log_type, date, thread_name, action);
+  snprintf((char*)log, 250, "[%s] [%s] [%s] %s", log_type, date, thread_name, action);
 
   buffer_put(buffer, log, packet_size);
 

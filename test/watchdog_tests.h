@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <string.h>
 
 static void watchdog_create_test(void);
 static void watchdog_create_test(void) {
@@ -15,6 +16,27 @@ static void watchdog_create_test(void) {
   watchdog = watchdog_create(1, "name", 10);
   assert(watchdog != NULL);
 
+  watchdog_destroy(watchdog);
+}
+
+static void watchdog_set_get_test(void);
+static void watchdog_set_get_test(void) {
+  Watchdog* watchdog = watchdog_create(1, "Hector", 1);
+  assert(watchdog != NULL);
+
+  char* name = watchdog_get_name(watchdog);
+  printf("%s", name);
+  assert(strcmp(name, "Hector") == 0);
+
+  int flag = watchdog_get_alarm_flag(watchdog);
+  assert(flag == 0);
+  
+  watchdog_set_flag(watchdog);
+
+  flag = watchdog_get_alarm_flag(watchdog);
+  assert(flag == 1);  
+
+  free(name);
   watchdog_destroy(watchdog);
 }
 
@@ -33,20 +55,16 @@ static void watchdog_check_alarm_test(void) {
   watchdog_destroy(watchdog);
 }
 
-static void watchdog_pet_test(void);
-static void watchdog_pet_test(void) {
+static void watchdog_scratch_test(void);
+static void watchdog_scratch_test(void) {
   Watchdog* watchdog = watchdog_create(1, "Boris", 2);
   assert(watchdog != NULL);
 
-  sleep((unsigned int)2);
-
-  watchdog_pet(watchdog);
-
-  printf("> watchdog_pet_test\n");
+  printf("> watchdog_scratch_test\n");
   printf("The watchdog is sleeping for 1 second...\n");
-  sleep(1);
+  sleep((unsigned int)1);
 
-  watchdog_pet(watchdog);
+  watchdog_scratch(watchdog);
   bool alarm_rung = watchdog_check_alarm(watchdog);
   assert(alarm_rung == false);
 
@@ -57,5 +75,6 @@ void watchdog_tests(void);
 void watchdog_tests(void) {
   watchdog_create_test();
   watchdog_check_alarm_test();
-  watchdog_pet_test();
+  watchdog_scratch_test();
+  watchdog_set_get_test();
 }
