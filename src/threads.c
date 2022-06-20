@@ -81,12 +81,12 @@ void* reader_thread(void* arg) {
     counter++;
     reader_reset(reader);
     uint8_t* packet = reader_read(reader, cores, reader_one_core);
-    logger_log(logger_buffer, "INFO", thread_name, "Reading_from_file.", logger_message_size);
+    logger_log(logger_buffer, "INFO", thread_name, "Reading from file.", logger_message_size);
 
     buffer_lock(reader_analyzer_buffer);
 
     if (buffer_is_full(reader_analyzer_buffer)) {
-      logger_log(logger_buffer, "INFO", thread_name, "The_buffer_is_full,_waiting_for_consumer.", logger_message_size);
+      logger_log(logger_buffer, "INFO", thread_name, "The_buffer is full, waiting for consumer.", logger_message_size);
       buffer_wait_for_consumer(reader_analyzer_buffer);
     }
     
@@ -119,11 +119,11 @@ void* analyzer_thread(void* arg) {
     buffer_lock(reader_analyzer_buffer);
 
     if (buffer_is_empty(reader_analyzer_buffer)) {
-      logger_log(logger_buffer, "INFO", thread_name, "The_buffer_is_empty,_waiting_for_producer.", logger_message_size);
+      logger_log(logger_buffer, "INFO", thread_name, "The buffer is empty, waiting for producer.", logger_message_size);
       buffer_wait_for_producer(reader_analyzer_buffer);
     }
 
-    logger_log(logger_buffer, "INFO", thread_name, "Getting_packet.", logger_message_size);
+    logger_log(logger_buffer, "INFO", thread_name, "Getting packet.", logger_message_size);
     uint8_t* curr = buffer_get(reader_analyzer_buffer);
     buffer_call_producer(reader_analyzer_buffer);
 
@@ -173,11 +173,11 @@ void* analyzer_thread(void* arg) {
     buffer_lock(analyzer_printer_buffer);
 
     if (buffer_is_full(analyzer_printer_buffer)) {
-      logger_log(logger_buffer, "INFO", thread_name, "The_buffer_is_full,_waiting_for_consumer.", logger_message_size);
+      logger_log(logger_buffer, "INFO", thread_name, "The_buffer is full, waiting for consumer.", logger_message_size);
       buffer_wait_for_consumer(analyzer_printer_buffer);
     }
     
-    logger_log(logger_buffer, "INFO", thread_name, "Sending_packet.", logger_message_size);
+    logger_log(logger_buffer, "INFO", thread_name, "Sending packet.", logger_message_size);
     buffer_put(analyzer_printer_buffer, analyzed_packet, analyzerpacket_all_cores);
     buffer_call_consumer(analyzer_printer_buffer);
 
@@ -195,7 +195,7 @@ void* analyzer_thread(void* arg) {
 }
 
 void* printer_thread(void* arg) {
-  char* thread_name = "READER";
+  char* thread_name = "PRINTER";
 
   (void)arg;
 
@@ -206,11 +206,11 @@ void* printer_thread(void* arg) {
     buffer_lock(analyzer_printer_buffer);
 
     if (buffer_is_empty(analyzer_printer_buffer)) {
-      logger_log(logger_buffer, "INFO", thread_name, "The_buffer_is_empty,_waiting_for_producer.", logger_message_size);
+      logger_log(logger_buffer, "INFO", thread_name, "The buffer is empty, waiting for producer.", logger_message_size);
       buffer_wait_for_producer(analyzer_printer_buffer);
     }
 
-    logger_log(logger_buffer, "INFO", thread_name, "Getting_packet.", logger_message_size);
+    logger_log(logger_buffer, "INFO", thread_name, "Getting packet.", logger_message_size);
     uint8_t* packet = buffer_get(analyzer_printer_buffer);
     buffer_call_producer(analyzer_printer_buffer);
 

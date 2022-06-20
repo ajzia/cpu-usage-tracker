@@ -6,9 +6,7 @@
 #include <stdio.h>
 
 #define LEVEL_LENGTH 5
-#define DATE_LENGTH 25
-#define THREAD_NAME_LENGTH 10
-#define ACTION_LENGTH 160
+#define THREAD_NAME_LENGTH 11
 
 static char* get_current_date(void) {
   time_t t = time(NULL);
@@ -62,22 +60,22 @@ void logger_put(register Buffer* buffer, const char* log_type, const char* date,
 void logger_read(register const Logger* const logger, register Buffer* buffer) {
   uint8_t* log = buffer_get(buffer);
 
-  char* log_type = malloc(LEVEL_LENGTH + 2);
-  char* date = malloc(DATE_LENGTH + 2);
-  char* time = malloc(DATE_LENGTH + 2);
-  char* thread_name = malloc(THREAD_NAME_LENGTH + 2);
-  char* action = malloc(ACTION_LENGTH);
+  char* log_type = strtok((char*)log, " ");
+  char* date = strtok(NULL, " ");
+  char* time = strtok(NULL, " ");
+  char* thread_name = strtok(NULL, " ");
+  fprintf(logger->f, "%*s %s %s %*s", -LEVEL_LENGTH, log_type, date, time, -THREAD_NAME_LENGTH, thread_name);
+  
+  char* action = strtok((char*)NULL, " ");
+  while (action != NULL) {
+    fprintf(logger->f, "%s ", action);
+    action = strtok(NULL, " ");
+  }
+  fprintf(logger->f, "\n");
 
-  sscanf((char*)log, "%s %s %s %s %s", log_type, date, time, thread_name, action);
-
-  fprintf(logger->f, "%*s %s %s %*s %s\n", -LEVEL_LENGTH, log_type, date, time, -THREAD_NAME_LENGTH, thread_name, action);
   fflush(logger->f);
 
   free(log);
-  free(log_type);
-  free(date);
-  free(time);
-  free(thread_name);
   free(action);
 }
 
