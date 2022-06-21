@@ -68,6 +68,7 @@ static Buffer* restrict logger_buffer;
 static Buffer* restrict reader_analyzer_buffer;
 static Buffer* restrict analyzer_printer_buffer;
 
+static char* get_current_date(void);
 static char* get_current_date(void) {
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
@@ -81,12 +82,14 @@ static char* get_current_date(void) {
   return date;
 }
 
+static void watchdog_notify(Watchdog* watchdog);
 static void watchdog_notify(Watchdog* watchdog) {
   watchdog_lock(watchdog); 
   watchdog_set_flag(watchdog); 
   watchdog_unlock(watchdog); 
 }
 
+static void wake_threads(void);
 static void wake_threads(void) {
   buffer_call_consumer(reader_analyzer_buffer);
   buffer_call_producer(reader_analyzer_buffer);
@@ -107,7 +110,8 @@ void signal_exit(const int signum) {
   pthread_mutex_unlock(&watchdog_mutex);
 }
 
-void* reader_thread(void* arg) {
+static void* reader_thread(void* arg);
+static void* reader_thread(void* arg) {
   char* thread_name = "READER";
 
   (void)arg;
@@ -167,7 +171,8 @@ void* reader_thread(void* arg) {
   return NULL;
 }
 
-void* analyzer_thread(void* arg) {
+static void* analyzer_thread(void* arg);
+static void* analyzer_thread(void* arg) {
   char* thread_name = "ANALYZER";
 
   (void)arg;
@@ -295,7 +300,8 @@ void* analyzer_thread(void* arg) {
   return NULL;
 }
 
-void* printer_thread(void* arg) {
+static void* printer_thread(void* arg);
+static void* printer_thread(void* arg) {
   char* thread_name = "PRINTER";
 
   (void)arg;
@@ -343,7 +349,8 @@ void* printer_thread(void* arg) {
   return NULL;
 }
 
-void* logger_thread(void* arg) {
+static void* logger_thread(void* arg);
+static void* logger_thread(void* arg) {
   (void)arg;
 
   register Logger* restrict logger = logger_create();
@@ -386,7 +393,8 @@ void* logger_thread(void* arg) {
   return NULL;
 }
 
-void* watchdog_thread(void* arg) {
+static void* watchdog_thread(void* arg);
+static void* watchdog_thread(void* arg) {
   char* thread_name = "WATCHDOG";
 
   (void)arg;

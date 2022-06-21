@@ -14,6 +14,7 @@ typedef struct Watchdog {
   pthread_t id;
   size_t time_limit;
   int alarm_flag;
+  char pad[4];
 } Watchdog;
 
 Watchdog* watchdog_create(pthread_t id, const char* name, size_t time_limit);

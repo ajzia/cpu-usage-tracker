@@ -37,6 +37,7 @@ LIB_INC := $(foreach l, $(LIB), -l$l)
 # is CC is clang, add -Weverything to flags
 ifeq ($(CC),clang)
 	C_FLAGS += -Weverything
+	C_FLAGS += -Wno-disabled-macro-expansion
 endif
 
 # Set -O (optimalization) flag if O=... is given, default -O3
