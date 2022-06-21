@@ -11,7 +11,7 @@ Reader* reader_create(char* const path, const size_t read_frequency) {
   if(stat(path, &buffer) != 0)
     return NULL;
 
-  Reader* reader = malloc(sizeof(*reader));
+  Reader* const reader = malloc(sizeof(*reader));
 
   *reader = (Reader){.path = path,
                      .f = fopen(path, "r"),
@@ -21,9 +21,14 @@ Reader* reader_create(char* const path, const size_t read_frequency) {
   return reader;
 }
 
-uint8_t* reader_read(register const Reader* restrict reader, const size_t cores, const size_t one_core_size) {
-  char* line = malloc(sizeof(char) * one_core_size);
-  uint8_t* packet = malloc(one_core_size * (cores + 1)); 
+uint8_t* reader_read(register const Reader* reader, const size_t cores, const size_t one_core_size) {
+  if (reader == NULL)
+    return NULL;
+  
+  char* const line = malloc(sizeof(char) * one_core_size);
+  uint8_t* const packet = malloc(one_core_size * (cores + 1)); 
+  if (line == NULL || packet == NULL)
+    return NULL;
 
   for (size_t i = 0; i <= cores; ++i) {
     char* result = fgets(&line[0], (int)one_core_size, reader->f);
@@ -38,9 +43,14 @@ uint8_t* reader_read(register const Reader* restrict reader, const size_t cores,
   return packet;
 }
 
-void reader_reset(Reader* const restrict reader) {
+void reader_reset(Reader* const reader) {
+  if (reader == NULL)
+    return;
+
   fclose(reader->f);
   reader->f = fopen(reader->path, "r");
+  if (reader->f == NULL)
+    return;
 }
 
 void reader_destroy(Reader* const reader) {

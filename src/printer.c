@@ -50,11 +50,17 @@ void printer_print(register const uint8_t packet[], const size_t packet_size) {
   printer_horizontal_bound();
   printer_date();
   for (size_t i = 0; i <= cores; ++i) {
-    AnalyzerPacket* analyzed_core = malloc(sizeof(*analyzed_core));
+    AnalyzerPacket* const analyzed_core = malloc(sizeof(*analyzed_core));
+    if (analyzed_core == NULL)
+      return;
+
     memcpy(analyzed_core, &packet[i * packet_size], sizeof(AnalyzerPacket));
 
     register double cpu_usage = analyzer_get_percentage(analyzed_core);
     char* name = analyzer_get_core_name(analyzed_core);
+    if (name == NULL)
+      return;
+
     printf("| %*s [", -CORE_NAME_PAD, name);                    
 
     printer_histogram(cpu_usage);

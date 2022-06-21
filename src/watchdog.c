@@ -4,14 +4,20 @@
 #include <stdio.h> 
 
 void watchdog_lock(Watchdog* const watchdog) {
+  if (watchdog == NULL)
+    return;
+
   pthread_mutex_lock(&watchdog->mutex);
 }
 
 void watchdog_unlock(Watchdog* const watchdog) {
+  if (watchdog == NULL)
+    return;
+
   pthread_mutex_unlock(&watchdog->mutex);
 }
 
-void watchdog_scratch(Watchdog* restrict watchdog) {
+void watchdog_scratch(Watchdog* const watchdog) {
   if (watchdog == NULL)
     return;
 
@@ -24,7 +30,7 @@ Watchdog* watchdog_create(const pthread_t id, const char* const name, const size
   if (name == NULL || time_limit == 0) 
     return NULL;
 
-  Watchdog* watchdog = malloc(sizeof(*watchdog));
+  Watchdog* const watchdog = malloc(sizeof(*watchdog));
   if (watchdog == NULL)
     return NULL;
 
@@ -40,11 +46,14 @@ Watchdog* watchdog_create(const pthread_t id, const char* const name, const size
   return watchdog;
 }
 
-char* watchdog_get_name(const Watchdog* const restrict watchdog) {
+char* watchdog_get_name(const Watchdog* const watchdog) {
   if (watchdog == NULL)
     return NULL;
 
   char* name = malloc(sizeof(watchdog->name));
+  if (name == NULL)
+    return NULL;
+
   memcpy(name, watchdog->name, sizeof(watchdog->name));
 
   return name;
@@ -57,11 +66,14 @@ int watchdog_get_alarm_flag(const Watchdog* const restrict watchdog) {
   return watchdog->alarm_flag;
 }
 
-void watchdog_set_flag(Watchdog* watchdog) {
+void watchdog_set_flag(Watchdog* const watchdog) {
+  if (watchdog == NULL)
+    return;
+
   watchdog->alarm_flag = 1;
 }
 
-bool watchdog_check_alarm(Watchdog* const restrict watchdog) {
+bool watchdog_check_alarm(Watchdog* const watchdog) {
   if (watchdog == NULL)
     return false;
 

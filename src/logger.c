@@ -12,6 +12,9 @@ static char* get_current_date(void) {
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
   char* date = malloc(40);
+  if (date == NULL)
+    return NULL;
+
   snprintf(date, 40, "%d-%02d-%02d_%02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
   return date;
@@ -19,7 +22,9 @@ static char* get_current_date(void) {
 
 Logger* logger_create(void) {
   char* date = get_current_date();
-  char* path = malloc(51);
+  char* path = malloc(50);
+  if (path == NULL)
+    return NULL;
 
   strcpy(path, "./log/cpu-usage-tracker_");
   strcat(path, date);
@@ -29,7 +34,9 @@ Logger* logger_create(void) {
   if (stat("./log", &st) != 0)
     mkdir("./log", 0700);
 
-  Logger* logger = malloc(sizeof(*logger));
+  Logger* const logger = malloc(sizeof(*logger));
+  if (logger == NULL)
+    return NULL;
 
   *logger = (Logger){.f = fopen(path, "a+")};
 
@@ -42,7 +49,10 @@ Logger* logger_create(void) {
   return logger;
 }
 
-void logger_put(register Buffer* buffer, const char* log_type, const char* date, const char* thread_name, const char* action, const size_t packet_size) {
+void logger_put(register Buffer* restrict buffer, const char* restrict log_type, const char* restrict date, const char* restrict thread_name, const char* restrict  action, const size_t packet_size) {
+  if (buffer == NULL)
+    return;
+  
   if (date == NULL || thread_name == NULL || action == NULL || log_type == NULL)
     return;
 
@@ -50,6 +60,9 @@ void logger_put(register Buffer* buffer, const char* log_type, const char* date,
     return;
 
   uint8_t* log = malloc(packet_size);
+  if (log == NULL)
+    return;
+
   snprintf((char*)log, 250, "[%s] [%s] [%s] %s", log_type, date, thread_name, action);
 
   buffer_put(buffer, log, packet_size);
@@ -58,7 +71,12 @@ void logger_put(register Buffer* buffer, const char* log_type, const char* date,
 }
 
 void logger_read(register const Logger* const logger, register Buffer* buffer) {
-  uint8_t* log = buffer_get(buffer);
+  if (buffer == NULL || logger == NULL)
+    return;
+
+  uint8_t* const log = buffer_get(buffer);
+  if (log == NULL)
+    return;
 
   char* log_type = strtok((char*)log, " ");
   char* date = strtok(NULL, " ");

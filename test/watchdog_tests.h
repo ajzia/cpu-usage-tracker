@@ -25,7 +25,6 @@ static void watchdog_set_get_test(void) {
   assert(watchdog != NULL);
 
   char* name = watchdog_get_name(watchdog);
-  printf("%s", name);
   assert(strcmp(name, "Hector") == 0);
 
   int flag = watchdog_get_alarm_flag(watchdog);
@@ -57,7 +56,7 @@ static void watchdog_check_alarm_test(void) {
 
 static void watchdog_scratch_test(void);
 static void watchdog_scratch_test(void) {
-  Watchdog* watchdog = watchdog_create(1, "Boris", 2);
+  Watchdog* watchdog = watchdog_create(1, "Boris", 1);
   assert(watchdog != NULL);
 
   printf("> watchdog_scratch_test\n");
@@ -74,7 +73,7 @@ static void watchdog_scratch_test(void) {
 void watchdog_tests(void);
 void watchdog_tests(void) {
   watchdog_create_test();
+  watchdog_set_get_test();
   watchdog_check_alarm_test();
   watchdog_scratch_test();
-  watchdog_set_get_test();
 }

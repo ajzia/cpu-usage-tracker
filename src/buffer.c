@@ -23,7 +23,7 @@ Buffer* buffer_create(const size_t packet_size, const size_t max_size) {
 
   size_t buffer_size = packet_size * max_size;
 
-  Buffer* buffer = malloc(sizeof(*buffer) + sizeof(uint8_t) * buffer_size);
+  Buffer* const buffer = malloc(sizeof(*buffer) + sizeof(uint8_t) * buffer_size);
   if (buffer == NULL)
       return NULL;
 
@@ -41,15 +41,24 @@ Buffer* buffer_create(const size_t packet_size, const size_t max_size) {
   return buffer;
 }
 
-bool buffer_is_empty(const Buffer* const restrict buffer) {
+bool buffer_is_empty(const Buffer* const buffer) {
+  if (buffer == NULL)
+    return false;
+
   return buffer->current_size == 0;
 }
 
-bool buffer_is_full(const Buffer* const restrict buffer) {
+bool buffer_is_full(const Buffer* const buffer) {
+  if (buffer == NULL)
+    return false;
+    
   return buffer->current_size == buffer->max_size;
 }
 
 void buffer_put(Buffer* const buffer, register const uint8_t packet[], register const size_t packet_size) {
+  if (buffer == NULL)
+    return;
+  
   if (buffer_is_full(buffer))
     return;
 
@@ -65,10 +74,16 @@ void buffer_put(Buffer* const buffer, register const uint8_t packet[], register 
 }
 
 uint8_t* buffer_get(Buffer* const buffer) {
+  if (buffer == NULL)
+    return NULL;
+
   if (buffer_is_empty(buffer))
     return NULL;
 
   uint8_t* packet = malloc(sizeof(packet) * buffer->packet_size);
+  if (packet == NULL)
+    return NULL;
+
   size_t packet_address = buffer->tail * buffer->packet_size;
 
   memcpy(&packet[0], &buffer->buffer[packet_address], buffer->packet_size);
@@ -80,26 +95,44 @@ uint8_t* buffer_get(Buffer* const buffer) {
 }
 
 void buffer_lock(Buffer* const buffer) {
+  if (buffer == NULL)
+    return;
+
   pthread_mutex_lock(&buffer->mutex);
 }
 
 void buffer_unlock(Buffer* const buffer) {
+  if (buffer == NULL)
+    return;
+
   pthread_mutex_unlock(&buffer->mutex);
 }
 
 void buffer_call_producer(Buffer* const buffer) {
+  if (buffer == NULL)
+    return;
+
   pthread_cond_signal(&buffer->can_produce);
 }
 
 void buffer_call_consumer(Buffer* const buffer) {
+  if (buffer == NULL)
+    return;
+
   pthread_cond_signal(&buffer->can_consume);
 }
 
 void buffer_wait_for_producer(Buffer* const buffer) {
+  if (buffer == NULL)
+    return;
+
   pthread_cond_wait(&buffer->can_consume, &buffer->mutex);
 }
 
 void buffer_wait_for_consumer(Buffer* const buffer) {
+  if (buffer == NULL)
+    return;
+    
   pthread_cond_wait(&buffer->can_produce, &buffer->mutex);
 }
 

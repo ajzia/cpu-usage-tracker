@@ -10,12 +10,10 @@ typedef struct Reader {
   size_t read_frequency;
 } Reader;
 
-Reader* reader_create(char* path, const size_t read_frequency);
-
-uint8_t* reader_read(register const Reader* restrict reader, const size_t cores, const size_t one_core_size);
-
+Reader* reader_create(char* path, size_t read_frequency);
 void reader_destroy(Reader* reader);
 
-void reader_reset(Reader* restrict reader);
+uint8_t* reader_read(const Reader* reader, size_t cores, size_t one_core_size);
+void reader_reset(Reader* reader);
 
 #endif

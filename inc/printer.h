@@ -3,6 +3,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-void printer_print(register const uint8_t packet[], const size_t packet_size);
+void printer_print(const uint8_t packet[], size_t packet_size);
 
 #endif

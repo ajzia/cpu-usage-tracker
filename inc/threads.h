@@ -8,14 +8,6 @@
 #include "logger.h"
 #include "watchdog.h"
 
-void* logger_thread(void* arg);
-
-void* reader_thread(void* arg);
-
-void* analyzer_thread(void* arg);
-
-void* printer_thread(void* arg);
-
 void run_threads(void);
 
 void signal_exit(int signum);

@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 ProcStatData* procstatdata_create(void) {
-  ProcStatData* data = malloc(sizeof(*data));
+  ProcStatData* const data = malloc(sizeof(*data));
   if (data == NULL)
     return NULL;
 
@@ -25,23 +25,9 @@ ProcStatData* procstatdata_create(void) {
   return data;
 }
 
-void procstatdata_print(register const ProcStatData* const data) {
-    printf("%s %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", 
-           data->core_name,
-           data->user,           
-           data->nice,
-           data->system,
-           data->idle,
-           data->iowait,
-           data->irq,
-           data->softirq,
-           data->steal,
-           data->guest,
-           data->guest_nice 
-           );
-
-}
-
 void procstatdata_destroy(ProcStatData* const data) {
+  if (data == NULL)
+    return;
+
   free(data);
 }

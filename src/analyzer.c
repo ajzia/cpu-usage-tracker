@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-AnalyzerPacket* analyzer_create(const char* restrict core_name) {
+AnalyzerPacket* analyzer_create(const char* core_name) {
   if (core_name == NULL)
     return NULL;
 
@@ -12,7 +12,9 @@ AnalyzerPacket* analyzer_create(const char* restrict core_name) {
   if (name_length > NAME_LEN || name_length == 0)
     return NULL;
 
-  AnalyzerPacket* packet = malloc(sizeof(*packet));
+  AnalyzerPacket* const packet = malloc(sizeof(*packet));
+  if (packet == NULL)
+    return NULL;
 
   strcpy(&packet->core_name[0], core_name);
   packet->percentage = 0.0;
@@ -20,22 +22,28 @@ AnalyzerPacket* analyzer_create(const char* restrict core_name) {
   return packet;
 }
 
-char* analyzer_get_core_name(const AnalyzerPacket* const restrict analyzer) {
+char* analyzer_get_core_name(const AnalyzerPacket* const analyzer) {
+  if (analyzer == NULL)
+    return NULL;
+
   char* name = malloc(sizeof(analyzer->core_name));
+    if (name == NULL)
+    return NULL;
+
   memcpy(name, analyzer->core_name, sizeof(analyzer->core_name));
 
   return name;
 }
 
-double analyzer_get_percentage(const AnalyzerPacket* const restrict analyzer) {
+double analyzer_get_percentage(const AnalyzerPacket* const analyzer) {
   return analyzer->percentage;
 }
 
-AnalyzerPacket* analyzer_count_cpu_usage(const ProcStatData* const prev, const ProcStatData* const curr) {
+AnalyzerPacket* analyzer_count_cpu_usage(register const ProcStatData* const restrict prev, register const ProcStatData* const restrict curr) {
   if (prev == NULL)
     return NULL;
 
-  register AnalyzerPacket* const restrict packet = analyzer_create(curr->core_name);
+  register AnalyzerPacket* const packet = analyzer_create(curr->core_name);
 
   if (curr == NULL) {
     packet->percentage = 0.0;

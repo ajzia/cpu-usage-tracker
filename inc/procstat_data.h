@@ -18,9 +18,6 @@ typedef struct ProcStatData {
 } ProcStatData;
 
 ProcStatData* procstatdata_create(void);
-
-void procstatdata_print(register const ProcStatData* data);
-
 void procstatdata_destroy(ProcStatData* data);
 
 #endif

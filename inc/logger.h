@@ -9,11 +9,9 @@ typedef struct Logger {
 } Logger;
 
 Logger* logger_create(void);
-
-void logger_put(register Buffer* buffer, const char* log_type, const char* date, const char* thread_name, const char* action, const size_t packet_size);
-
-void logger_read(register const Logger* logger, register Buffer* buffer);
-
 void logger_destroy(Logger* logger);
+
+void logger_put(Buffer* restrict buffer, const char* restrict log_type, const char* restrict date, const char* restrict thread_name, const char* restrict action, size_t packet_size);
+void logger_read(const Logger* logger, Buffer* buffer);
 
 #endif

@@ -72,6 +72,10 @@ static char* get_current_date(void) {
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
   char* date = malloc(40);
+  if (date == NULL) {
+    return NULL;
+  }
+
   snprintf(date, 40, "%d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
   return date;
@@ -92,7 +96,7 @@ static void wake_threads(void) {
   buffer_call_producer(logger_buffer);
 }
 
-void signal_exit(int signum) {
+void signal_exit(const int signum) {
   logger_log(logger_buffer, "INFO", "SIGNAL", "Signal detected, exiting program.  ", logger_message_size);
 
   printf(" Signal %d detected, exiting program...\n", signum);
@@ -108,7 +112,7 @@ void* reader_thread(void* arg) {
 
   (void)arg;
 
-  register Reader* restrict reader = reader_create("/proc/stat", read_frequency);
+  register Reader* const reader = reader_create("/proc/stat", read_frequency);
   
   while(true) {
 
@@ -121,6 +125,10 @@ void* reader_thread(void* arg) {
 
     logger_log(logger_buffer, "INFO", thread_name, "Resetting reader.", logger_message_size);
     reader_reset(reader);
+    if (reader->f == NULL) {
+      logger_log(logger_buffer, "ERROR", thread_name, "Problem with reopening the file.", logger_message_size);
+      return NULL;
+    }
 
     logger_log(logger_buffer, "INFO", thread_name, "Scratching watchdog.", logger_message_size);
     watchdog_scratch(reader_watchdog);
@@ -166,7 +174,11 @@ void* analyzer_thread(void* arg) {
 
   bool prev_flag = false;
   uint8_t* prev = malloc(procstatdata_all_cores);
-
+  if (prev == NULL) {
+    logger_log(logger_buffer, "ERROR", thread_name, "Problem with mallocing a variable.", logger_message_size);
+    return NULL;
+  }
+    
   while(true) {
 
     watchdog_lock(anaylzer_watchdog);
@@ -200,6 +212,10 @@ void* analyzer_thread(void* arg) {
     buffer_unlock(reader_analyzer_buffer);
 
     uint8_t* restrict analyzed_packet = malloc(analyzerpacket_all_cores);
+    if (analyzed_packet == NULL) {
+      logger_log(logger_buffer, "ERROR", thread_name, "Problem with mallocing a variable.", logger_message_size);
+      return NULL;
+    }
 
     logger_log(logger_buffer, "INFO", thread_name, "Analyzing...", logger_message_size);
     for (size_t i = 0; i <= cores; ++i) {
@@ -390,11 +406,16 @@ void* watchdog_thread(void* arg) {
     pthread_mutex_lock(&watchdog_mutex);
     if (watchdog_flag) {
       char* action = malloc(40);
+      if (action == NULL) {
+        logger_log(logger_buffer, "ERROR", thread_name, "Problem with mallocing a variable.", logger_message_size);
+        return NULL;
+      }
+
       strcpy(action, "Watchdog ");
       strcat(action, dog_name);
       strcat(action, " has raised the alarm.");
 
-      if (strcmp(dog_name, "signal")) {
+      if (strcmp(dog_name, "signal") != 0) {
         logger_log(logger_buffer, "INFO", thread_name, action, logger_message_size);
         free(dog_name);
       }
@@ -441,6 +462,7 @@ void run_threads(void) {
   anaylzer_watchdog = watchdog_create(pthread_self(), "ANALYZER", WATCHDOG_TIMER);
   printer_watchdog = watchdog_create(pthread_self(), "PRINTER", WATCHDOG_TIMER);
 
+  // WATCHDOG MUTEX
   pthread_mutex_init(&watchdog_mutex, NULL);
 
   // THREADS
