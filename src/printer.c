@@ -33,7 +33,7 @@ static void printer_date(void) {
 static void printer_histogram(const double percent) {
   register double temp = 0.0;
   while (temp <= percent - 0.05) {
-    printf("#");
+    printf("\e[38;5;86m#\e[0m");
     temp += 0.05;
   }
 
